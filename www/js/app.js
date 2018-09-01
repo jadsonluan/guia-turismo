@@ -238,6 +238,16 @@ angular.module('your_app_name', [
   })
 
   //OTHERS
+  .state('app.weather', {
+    url: "/weather",
+    views: {
+      'menuContent': {
+        templateUrl: "views/app/weather.html",
+        controller: 'WeatherCtrl'
+      }
+    }
+  })
+
   .state('app.settings', {
     url: "/settings",
     views: {

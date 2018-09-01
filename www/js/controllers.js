@@ -1,12 +1,85 @@
 angular.module('your_app_name.controllers', [])
 
 .controller('AuthCtrl', function($scope, $ionicConfig) {
-
+	console.log("Calling auth");
 })
 
 // APP
 .controller('AppCtrl', function($scope, $ionicConfig) {
 
+})
+
+// WEATHER
+.controller('WeatherCtrl', function($scope, $http) {
+	var weatherUrl = "http://api.openweathermap.org/data/2.5/weather?q=fortaleza,br&appid=8bbd7160157b0dc34bd2682a37ec1fc5&units=metric&lang=pt";
+	var forecastUrl = "http://api.openweathermap.org/data/2.5/forecast?q=fortaleza,br&appid=8bbd7160157b0dc34bd2682a37ec1fc5&units=metric&lang=pt&cnt=36";
+
+	$scope.temperature_sources = [];
+	
+	var WeatherDecorator = {
+		"cloudy": { "icon": "ion-ios-cloudy", "color": "dark" },
+		"clear": { "icon": "ion-ios-sunny", "color": "energized" },
+		"rainy": { "icon": "ion-ios-rainy", "color": "calm" }
+	};
+
+	var weekday = {	0: "Domingo", 1: "Segunda", 2: "Terça", 3: "Quarta", 4: "Quinta", 5: "Sexta", 6: "Sábado"};
+
+	$http.get(weatherUrl)
+	.then(function (response) {
+		console.log("getWeather()");
+		var listString = JSON.stringify(response.data);
+		var list = JSON.parse(listString);
+		var obj = {};
+		var weatherType = getWeatherType(list.weather[0].main); 
+		obj.label = "Hoje";
+		obj.temp = Math.round(list.main.temp);
+		obj.icon = weatherType.icon;
+		obj.color = weatherType.color; 
+		obj.description = list.weather[0].description;
+		$scope.temperature_sources.push(obj);
+		loadForecast();
+	},function (response) {
+		console.log('Something went wrong...');
+	});
+
+	var loadForecast = function() { 
+		$http.get(forecastUrl)
+		.then(function (response) {
+			var listString = JSON.stringify(response.data.list);
+			var list = JSON.parse(listString);
+
+			for(var i = 3; i < list.length; i += 8) {
+				var obj = {};
+				var date = new Date(list[i].dt_txt);
+				var weatherType = getWeatherType(list[i].weather[0].main); 
+
+				obj.label = weekday[date.getDay()];
+				obj.temp = Math.round(list[i].main.temp);
+				obj.icon = weatherType.icon;
+				obj.color = weatherType.color; 
+				obj.description = list[i].weather[0].description;
+				
+				$scope.temperature_sources.push(obj);
+			}	
+		},function (response) {
+			console.log('Something went wrong...');
+		});
+	};
+
+	function getWeatherType(weatherString) {
+		var result;
+		switch(weatherString) {
+			case "Rain":
+			case "Drizzle":	result = WeatherDecorator.rainy; break;
+
+			case "Mist":
+			case "Clouds": result = WeatherDecorator.cloudy; break;
+
+			case "Clear":
+			default: result = WeatherDecorator.clear; break;
+		}
+		return result;
+	}
 })
 
 //LOGIN
@@ -74,7 +147,7 @@ angular.module('your_app_name.controllers', [])
 					body:    'How are you? Nice greetings from IonFullApp'
 				});
 			}
-		);
+			);
 	};
 })
 
@@ -124,8 +197,8 @@ angular.module('your_app_name.controllers', [])
 		var hideSheet = $ionicActionSheet.show({
 			//Here you can add some more buttons
 			buttons: [
-				{ text: 'Show Banner' },
-				{ text: 'Show Interstitial' }
+			{ text: 'Show Banner' },
+			{ text: 'Show Interstitial' }
 			],
 			destructiveText: 'Remove Ads',
 			titleText: 'Choose the ad to show',
@@ -221,7 +294,7 @@ angular.module('your_app_name.controllers', [])
 	$scope.feed = [];
 
 	var categoryId = $stateParams.categoryId,
-			sourceId = $stateParams.sourceId;
+	sourceId = $stateParams.sourceId;
 
 	$scope.doRefresh = function() {
 
@@ -232,7 +305,7 @@ angular.module('your_app_name.controllers', [])
 			});
 
 			var category = _.find(response, {id: categoryId }),
-					source = _.find(category.feed_sources, {id: sourceId });
+			source = _.find(category.feed_sources, {id: sourceId });
 
 			$scope.sourceTitle = source.title;
 
@@ -446,7 +519,7 @@ angular.module('your_app_name.controllers', [])
 			}, function (error) {
 				console.log('Error: ' + error);
 			}
-		);
+			);
 	};
 
 	$scope.removeImage = function(image) {
