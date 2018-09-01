@@ -11,9 +11,6 @@ angular.module('your_app_name.controllers', [])
 
 // WEATHER
 .controller('WeatherCtrl', function($scope, $http) {
-	var weatherUrl = "http://api.openweathermap.org/data/2.5/weather?q=fortaleza,br&appid=8bbd7160157b0dc34bd2682a37ec1fc5&units=metric&lang=pt";
-	var forecastUrl = "http://api.openweathermap.org/data/2.5/forecast?q=fortaleza,br&appid=8bbd7160157b0dc34bd2682a37ec1fc5&units=metric&lang=pt&cnt=36";
-
 	$scope.temperature_sources = [];
 	
 	var WeatherDecorator = {
@@ -24,47 +21,65 @@ angular.module('your_app_name.controllers', [])
 
 	var weekday = {	0: "Domingo", 1: "Segunda", 2: "Terça", 3: "Quarta", 4: "Quinta", 5: "Sexta", 6: "Sábado"};
 
-	$http.get(weatherUrl)
-	.then(function (response) {
-		console.log("getWeather()");
-		var listString = JSON.stringify(response.data);
-		var list = JSON.parse(listString);
-		var obj = {};
-		var weatherType = getWeatherType(list.weather[0].main); 
-		obj.label = "Hoje";
-		obj.temp = Math.round(list.main.temp);
-		obj.icon = weatherType.icon;
-		obj.color = weatherType.color; 
-		obj.description = list.weather[0].description;
-		$scope.temperature_sources.push(obj);
-		loadForecast();
-	},function (response) {
-		console.log('Something went wrong...');
-	});
+	navigator.geolocation.getCurrentPosition(onGetPositionSuccess, onGetPositionFail);
+	
+	function loadData(lat, lng) {
+		var apiURL = "https://api.openweathermap.org/data/2.5";
+		var apiKey = "8bbd7160157b0dc34bd2682a37ec1fc5";
+		var location = "lat="+lat+"&lon="+lng;
+		
+		getWeather(apiURL, apiKey, location);
+		getForecast(apiURL, apiKey, location);
+	}
 
-	var loadForecast = function() { 
-		$http.get(forecastUrl)
+	function getWeather(apiURL, apiKey, location) {
+		var query = apiURL+"/weather?"+location+"&appid="+apiKey+"&units=metric&lang=pt";
+
+		$http.get(query)
+		.then(function (response) {
+			var listString = JSON.stringify(response.data);
+			var list = JSON.parse(listString);
+			var obj = getWeatherDay(list, true);
+			$scope.temperature_sources.push(obj);
+		},function (response) {
+			console.log('Something went wrong...');
+		});
+	}
+
+	function getForecast(apiURL, apiKey, location) {
+		var query = apiURL+"/forecast?"+location+"&appid="+apiKey+"&units=metric&lang=pt&cnt=36"; 
+		
+		$http.get(query)
 		.then(function (response) {
 			var listString = JSON.stringify(response.data.list);
 			var list = JSON.parse(listString);
 
 			for(var i = 3; i < list.length; i += 8) {
-				var obj = {};
-				var date = new Date(list[i].dt_txt);
-				var weatherType = getWeatherType(list[i].weather[0].main); 
-
-				obj.label = weekday[date.getDay()];
-				obj.temp = Math.round(list[i].main.temp);
-				obj.icon = weatherType.icon;
-				obj.color = weatherType.color; 
-				obj.description = list[i].weather[0].description;
-				
+				var obj = getWeatherDay(list[i]);
 				$scope.temperature_sources.push(obj);
 			}	
 		},function (response) {
 			console.log('Something went wrong...');
 		});
 	};
+
+	function getWeatherDay(data, today = false) {
+		var obj = {};
+		var dayLabel = "Hoje";
+
+		if (!today) {
+			var date = new Date(data.dt_txt);
+			dayLabel = weekday[date.getDay()]
+		}
+
+		var weatherType = getWeatherType(data.weather[0].main); 
+		obj.color = weatherType.color; 
+		obj.icon = weatherType.icon;
+		obj.label = dayLabel;
+		obj.temp = Math.round(data.main.temp);
+		obj.description = data.weather[0].description;
+		return obj;
+	}
 
 	function getWeatherType(weatherString) {
 		var result;
@@ -79,6 +94,16 @@ angular.module('your_app_name.controllers', [])
 			default: result = WeatherDecorator.clear; break;
 		}
 		return result;
+	}
+
+	function onGetPositionFail(error) {
+		console.log('code: ' + error.code + '\n' +
+			'message: ' + error.message + '\n');
+	}
+
+	function onGetPositionSuccess(position) {
+		console.log("success bitches");
+		loadData(position.coords.latitude, position.coords.longitude);
 	}
 })
 
