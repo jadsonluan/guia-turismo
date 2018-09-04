@@ -222,4 +222,51 @@ angular.module('your_app_name.services', [])
 	};
 
 })
+
+// WEATHER SERVICE
+.service('ForecastService', function($rootScope, $http) {
+	// navigator.geolocation.getCurrentPosition(onGetPositionSuccess, onGetPositionFail);
+	var apiURL = "https://api.openweathermap.org/data/2.5";
+	var apiKey = "8bbd7160157b0dc34bd2682a37ec1fc5";
+	// var location = "lat="+lat+"&lon="+lng;
+	var location = "q=fortaleza,br";
+
+	this.getWeatherForecast = function(callback) {
+		var query = apiURL+"/forecast?"+location+"&appid="+apiKey+"&units=metric&lang=pt&cnt=36"; 
+		
+		$http.get(query)
+		.then(function (response) {
+			var listString = JSON.stringify(response.data.list);
+			var list = JSON.parse(listString);
+			callback(list);
+		},function (response) {
+			callback();
+		});
+	}
+
+	this.getCurrentWeather = function(callback) {
+		var query = apiURL+"/weather?"+location+"&appid="+apiKey+"&units=metric&lang=pt";
+		$http.get(query).then(function(response) {
+			var dataToString = JSON.stringify(response.data);
+			var data = JSON.parse(dataToString);
+			callback(data);
+		}, function(response) {
+			callback();
+		});
+	}
+
+	function getForecast(apiURL, apiKey, location) {
+		
+	};
+
+	// function onGetPositionFail(error) {
+	// 	console.log('code: ' + error.code + '\n' +
+	// 		'message: ' + error.message + '\n');
+	// }
+
+	// function onGetPositionSuccess(position) {
+	// 	console.log("success bitches");
+	// 	loadData(position.coords.latitude, position.coords.longitude);
+	// }
+})
 ;

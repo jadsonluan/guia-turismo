@@ -10,101 +10,32 @@ angular.module('your_app_name.controllers', [])
 })
 
 // WEATHER
-.controller('WeatherCtrl', function($scope, $http) {
+.controller('WeatherCtrl', function($scope, $http, ForecastService, WeatherFactory) {
 	$scope.temperature_sources = [];
-	
-	var WeatherDecorator = {
-		"cloudy": { "icon": "ion-ios-cloudy", "color": "dark" },
-		"clear": { "icon": "ion-ios-sunny", "color": "energized" },
-		"rainy": { "icon": "ion-ios-rainy", "color": "calm" }
-	};
 
-	var weekday = {	0: "Domingo", 1: "Segunda", 2: "Terça", 3: "Quarta", 4: "Quinta", 5: "Sexta", 6: "Sábado"};
+	ForecastService.getCurrentWeather(function(response) {
+		if (response) {
+			var weather = WeatherFactory(response, true);
+			$scope.temperature_sources.push(weather);
+		} else {
+			console.log("Erro ao obter temperaturas");
+		}
+	});
 
-	navigator.geolocation.getCurrentPosition(onGetPositionSuccess, onGetPositionFail);
-	
-	function loadData(lat, lng) {
-		var apiURL = "https://api.openweathermap.org/data/2.5";
-		var apiKey = "8bbd7160157b0dc34bd2682a37ec1fc5";
-		var location = "lat="+lat+"&lon="+lng;
-		
-		getWeather(apiURL, apiKey, location);
-		getForecast(apiURL, apiKey, location);
-	}
-
-	function getWeather(apiURL, apiKey, location) {
-		var query = apiURL+"/weather?"+location+"&appid="+apiKey+"&units=metric&lang=pt";
-
-		$http.get(query)
-		.then(function (response) {
-			var listString = JSON.stringify(response.data);
-			var list = JSON.parse(listString);
-			var obj = getWeatherDay(list, true);
-			$scope.temperature_sources.push(obj);
-		},function (response) {
-			console.log('Something went wrong...');
-		});
-	}
-
-	function getForecast(apiURL, apiKey, location) {
-		var query = apiURL+"/forecast?"+location+"&appid="+apiKey+"&units=metric&lang=pt&cnt=36"; 
-		
-		$http.get(query)
-		.then(function (response) {
-			var listString = JSON.stringify(response.data.list);
-			var list = JSON.parse(listString);
-
-			for(var i = 3; i < list.length; i += 8) {
-				var obj = getWeatherDay(list[i]);
+	ForecastService.getWeatherForecast(function(response) {
+		if (response) {
+			// As previsões começam com 00 horas do dia seguinte e cada previsão tem um intervalo de
+			// 03 horas. Começamos a iteração em i=3 para que peguemos dados a partir de 12 horas
+			// E pulamos (i += 8) de 24 horas em 24 horas, para ignorarmos as outras previsões durante
+			// o mesmo dia		
+			for(var i = 3; i < response.length; i += 8) {
+				var obj = WeatherFactory(response[i]);
 				$scope.temperature_sources.push(obj);
 			}	
-		},function (response) {
-			console.log('Something went wrong...');
-		});
-	};
-
-	function getWeatherDay(data, today = false) {
-		var obj = {};
-		var dayLabel = "Hoje";
-
-		if (!today) {
-			var date = new Date(data.dt_txt);
-			dayLabel = weekday[date.getDay()]
+		} else {
+			console.log("Erro ao obter temperaturas");
 		}
-
-		var weatherType = getWeatherType(data.weather[0].main); 
-		obj.color = weatherType.color; 
-		obj.icon = weatherType.icon;
-		obj.label = dayLabel;
-		obj.temp = Math.round(data.main.temp);
-		obj.description = data.weather[0].description;
-		return obj;
-	}
-
-	function getWeatherType(weatherString) {
-		var result;
-		switch(weatherString) {
-			case "Rain":
-			case "Drizzle":	result = WeatherDecorator.rainy; break;
-
-			case "Mist":
-			case "Clouds": result = WeatherDecorator.cloudy; break;
-
-			case "Clear":
-			default: result = WeatherDecorator.clear; break;
-		}
-		return result;
-	}
-
-	function onGetPositionFail(error) {
-		console.log('code: ' + error.code + '\n' +
-			'message: ' + error.message + '\n');
-	}
-
-	function onGetPositionSuccess(position) {
-		console.log("success bitches");
-		loadData(position.coords.latitude, position.coords.longitude);
-	}
+	});
 })
 
 //LOGIN
