@@ -1,5 +1,6 @@
 # guia-turismo
-O projeto foi cancelado.
+## O projeto foi cancelado.
+
 
 Your Ionic project is ready to go! Some quick tips:
 
