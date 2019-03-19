@@ -1,3 +1,6 @@
+# guia-turismo
+O projeto foi cancelado.
+
 Your Ionic project is ready to go! Some quick tips:
 
 * cd into your project:
@@ -48,4 +51,3 @@ For more help use ```ionic --help``` or visit the Ionic docs: http://ionicframew
 
 
 You can find the documentation here: http://bit.ly/ionicthemes-ionfullapp
-# guia-turismo
